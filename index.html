@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Ball Fight Simulator Ultimate</title>
     <style>
         :root {
@@ -13,6 +13,11 @@
             --border-color: #334155;
         }
 
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             background-color: #0f172a;
             color: #f8fafc;
@@ -20,17 +25,24 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
             user-select: none;
+            touch-action: none;
+            padding: 10px;
         }
 
+        /* 게임 컨테이너: 모바일 화면 크기에 맞춰 최대 500px까지 1:1 비율 유지 */
         #game-container {
             position: relative;
-            width: 500px;
-            height: 500px;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         canvas {
@@ -39,14 +51,17 @@
             border-radius: 16px;
             box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5);
             display: none;
+            width: 100%;
+            height: 100%;
         }
 
+        /* 메인 메뉴 및 캐릭터 선택 화면을 반응형 크기로 변경 */
         .screen-panel {
             position: absolute;
             top: 0;
             left: 0;
-            width: 500px;
-            height: 500px;
+            width: 100%;
+            height: 100%;
             background-color: #1e293b;
             border: 3px solid #334155;
             border-radius: 16px;
@@ -55,23 +70,25 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-sizing: border-box;
-            padding: 25px;
+            padding: 15px;
+            z-index: 5;
         }
 
         .menu-title {
-            font-size: 32px;
+            font-size: 7vw;
+            @media (min-width: 500px) { font-size: 32px; }
             font-weight: 800;
             letter-spacing: 2px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             background: linear-gradient(to right, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-align: center;
         }
 
         .btn {
-            padding: 12px 35px;
-            font-size: 16px;
+            padding: 10px 28px;
+            font-size: 15px;
             font-weight: 700;
             color: white;
             background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -91,88 +108,95 @@
             background: #475569;
             box-shadow: 0 4px 12px rgba(71, 85, 105, 0.3);
         }
-        .btn-secondary:hover {
-            background: #54657a;
-            box-shadow: 0 6px 16px rgba(71, 85, 105, 0.5);
-        }
 
         #ingame-menu-btn {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 12px;
+            right: 12px;
             padding: 6px 12px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
-            background-color: rgba(255,255,255,0.1);
+            background-color: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.2);
-            color: #94a3b8;
+            color: #f8fafc;
             border-radius: 6px;
             cursor: pointer;
             display: none;
             z-index: 10;
         }
-        #ingame-menu-btn:hover {
-            background-color: rgba(255,255,255,0.2);
-            color: #f8fafc;
-        }
 
-        #char-select-menu { display: none; justify-content: flex-start; }
-        .select-title { font-size: 20px; font-weight: 700; margin-bottom: 15px; }
-        .slots-container { display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px; }
-        .player-slot { display: flex; flex-direction: column; items: center; gap: 8px; width: 48%; }
-        .slot-label { font-size: 13px; font-weight: 600; color: #94a3b8; text-align: center; }
-        .char-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; width: 100%; }
+        #char-select-menu { display: none; justify-content: space-between; }
+        .select-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; text-align: center; }
+        .slots-container { display: flex; justify-content: space-between; width: 100%; gap: 8px; margin-bottom: 5px; flex: 1; min-height: 0; }
+        .player-slot { display: flex; flex-direction: column; items: center; gap: 4px; width: 50%; min-height: 0; }
+        .slot-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-align: center; }
+        
+        /* 캐릭터 격자 모바일 스크롤 및 배치 최적화 */
+        .char-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 4px; 
+            width: 100%; 
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 2px;
+        }
         
         .char-option {
-            padding: 8px 4px;
+            padding: 6px 2px;
             background-color: #111827;
             border: 2px solid #334155;
-            border-radius: 8px;
+            border-radius: 6px;
             color: #f8fafc;
             font-weight: 700;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
             text-align: center;
-            transition: all 0.1s ease;
         }
-        .p1-selected { border-color: #3b82f6 !important; background-color: rgba(59, 130, 246, 0.2); }
-        .p2-selected { border-color: #ec4899 !important; background-color: rgba(236, 72, 153, 0.2); }
+        .p1-selected { border-color: #3b82f6 !important; background-color: rgba(59, 130, 246, 0.25); }
+        .p2-selected { border-color: #ec4899 !important; background-color: rgba(236, 72, 153, 0.25); }
 
         .skill-desc-panel {
             width: 100%;
             background: #111827;
             border-radius: 8px;
-            padding: 10px;
-            box-sizing: border-box;
-            font-size: 11px;
-            margin-bottom: 15px;
+            padding: 8px;
+            font-size: 10px;
+            margin-top: 5px;
+            margin-bottom: 8px;
             border: 1px solid #334155;
             display: flex;
             justify-content: space-between;
-            min-height: 85px;
+            gap: 8px;
+            min-height: 65px;
+            max-height: 75px;
+            overflow-y: auto;
         }
-        .skill-desc-box { width: 48%; display: flex; flex-direction: column; gap: 2px; }
+        .skill-desc-box { width: 50%; display: flex; flex-direction: column; gap: 1px; line-height: 1.3; }
         .skill-name-tag { font-weight: bold; color: #f59e0b; }
 
-        .select-actions { display: flex; gap: 15px; width: 100%; justify-content: center; }
+        .select-actions { display: flex; gap: 10px; width: 100%; justify-content: center; }
+        .select-actions .btn { padding: 8px 20px; font-size: 14px; }
 
+        /* 하단 체력 바 보드 모바일 레이아웃 조정 */
         #status-board {
-            margin-top: 20px;
+            margin-top: 12px;
             display: none;
             justify-content: space-between;
-            width: 500px;
-            gap: 30px;
+            width: 100%;
+            max-width: 500px;
+            gap: 15px;
         }
-        .hp-container { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-        .hp-name { font-size: 14px; font-weight: 700; }
+        .hp-container { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+        .hp-name { font-size: 12px; font-weight: 700; }
         .bar-bg { width: 100%; background-color: #1e293b; border-radius: 4px; overflow: hidden; }
-        .hp-bar-bg { height: 12px; }
-        .mp-bar-bg { height: 5px; background-color: #0f172a; }
-        .bar-fill { height: 100%; width: 100%; border-radius: 4px; transition: width 0.05s linear; }
+        .hp-bar-bg { height: 10px; }
+        .mp-bar-bg { height: 4px; background-color: #0f172a; }
+        .bar-fill { height: 100%; width: 100%; border-radius: 4px; }
         
-        @keyframes minjun-glow-1 { 0%, 100% { filter: drop-shadow(0 0 2px #3b82f6); opacity: 0.8; } 50% { filter: drop-shadow(0 0 8px #3b82f6); opacity: 1; } }
-        @keyframes minjun-glow-2 { 0%, 100% { filter: drop-shadow(0 0 2px #f59e0b); opacity: 0.7; } 50% { filter: drop-shadow(0 0 12px #f59e0b); opacity: 1; } }
-        @keyframes minjun-glow-3 { 0%, 100% { filter: drop-shadow(0 0 4px #ef4444); opacity: 0.6; } 50% { filter: drop-shadow(0 0 18px #ef4444); opacity: 1; } }
+        @keyframes minjun-glow-1 { 0%, 100% { filter: drop-shadow(0 0 2px #3b82f6); opacity: 0.8; } 50% { filter: drop-shadow(0 0 6px #3b82f6); opacity: 1; } }
+        @keyframes minjun-glow-2 { 0%, 100% { filter: drop-shadow(0 0 2px #f59e0b); opacity: 0.7; } 50% { filter: drop-shadow(0 0 9px #f59e0b); opacity: 1; } }
+        @keyframes minjun-glow-3 { 0%, 100% { filter: drop-shadow(0 0 3px #ef4444); opacity: 0.6; } 50% { filter: drop-shadow(0 0 14px #ef4444); opacity: 1; } }
         .glow-step1 { animation: minjun-glow-1 0.4s infinite alternate; }
         .glow-step2 { animation: minjun-glow-2 0.25s infinite alternate; }
         .glow-step3 { animation: minjun-glow-3 0.15s infinite alternate; }
@@ -572,7 +596,7 @@
 
                 this.licanSniperTargetTime = 0; 
                 this.licanTrappedEndTime = 0;   
-                this.hasResetTrapFlag = true; // 구속 만료 감지용 플래그
+                this.hasResetTrapFlag = true;
             }
 
             setup(charKey) {
@@ -846,14 +870,14 @@
                 }
 
                 if (this.isRouletteMode) {
-                    ctx.save(); ctx.fillStyle = '#f97316'; ctx.font = 'bold 13px sans-serif';
+                    ctx.save(); ctx.fillStyle = '#f97316'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
                     const roulettePool = ['액션 게임', '생존 게임', '리듬 게임'];
                     const randomText = roulettePool[Math.floor(Date.now() / 60) % roulettePool.length];
                     ctx.fillText(randomText, this.x, this.y - 40); ctx.restore();
                 }
 
                 if (Date.now() < this.selectedGameTextEndTime) {
-                    ctx.save(); ctx.fillStyle = '#fecdd3'; ctx.font = 'bold 13px sans-serif';
+                    ctx.save(); ctx.fillStyle = '#fecdd3'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
                     ctx.shadowBlur = 6; ctx.shadowColor = '#f43f5e';
                     ctx.fillText(this.selectedGameText, this.x, this.y - 42); ctx.restore();
                 }
@@ -868,13 +892,11 @@
                     return;
                 }
 
-                // 덫 구속 상태 핸들링
                 if (now < this.licanTrappedEndTime) {
                     this.vx = 0; this.vy = 0;
-                    this.hasResetTrapFlag = false; // 구속 중임을 표시
+                    this.hasResetTrapFlag = false;
                     return; 
                 } else {
-                    // ★ 버그 수정 핵심: 구속시간(2초)이 딱 끝나는 프레임에 스스로 기동하도록 속도 복구
                     if (!this.hasResetTrapFlag) {
                         this.launch(); 
                         this.hasResetTrapFlag = true; 
@@ -1229,7 +1251,7 @@
             forceBackToMenu();
         }
         window.addEventListener('click', backToMenuOnEnded);
-        window.addEventListener('keydown', backToMenuOnEnded);
+        window.addEventListener('touchend', backToMenuOnEnded);
 
         function animate() {
             ctx.save();
@@ -1304,13 +1326,13 @@
 
             if (gameState === 'ENDED') {
                 ctx.fillStyle = 'rgba(15, 23, 42, 0.85)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
                 let msg = "무승부 (DRAW)";
                 if (ball1.isDead && !ball2.isDead) msg = `${ball2.name} 승리!`;
                 else if (!ball1.isDead && ball2.isDead) msg = `${ball1.name} 승리!`;
-                ctx.fillText(msg, canvas.width / 2, canvas.height / 2 - 20);
-                ctx.fillStyle = '#94a3b8'; ctx.font = 'normal 14px sans-serif';
-                ctx.fillText('화면을 클릭하면 메인 메뉴로 돌아갑니다.', canvas.width / 2, canvas.height / 2 + 35);
+                ctx.fillText(msg, canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = '#94a3b8'; ctx.font = 'normal 13px sans-serif';
+                ctx.fillText('화면을 터치하면 메인 메뉴로 돌아갑니다.', canvas.width / 2, canvas.height / 2 + 35);
                 ctx.restore();
                 return;
             }
