@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Fight Simulator Ultimate</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+        }
+
+        canvas {
+            background-color: #0b0f19;
+            border: 3px solid #334155;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5);
+            display: none;
+        }
+
+        .screen-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 500px;
+            height: 500px;
+            background-color: #1e293b;
+            border: 3px solid #334155;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            padding: 25px;
+        }
+
+        .menu-title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 40px;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            padding: 12px 35px;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+        }
+
+        .btn-secondary {
+            background: #475569;
+            box-shadow: 0 4px 12px rgba(71, 85, 105, 0.3);
+        }
+        .btn-secondary:hover {
+            background: #54657a;
+            box-shadow: 0 6px 16px rgba(71, 85, 105, 0.5);
+        }
+
+        #ingame-menu-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #94a3b8;
+            border-radius: 6px;
+            cursor: pointer;
+            display: none;
+            z-index: 10;
+        }
+        #ingame-menu-btn:hover {
+            background-color: rgba(255,255,255,0.2);
+            color: #f8fafc;
+        }
+
+        #char-select-menu { display: none; justify-content: flex-start; }
+        .select-title { font-size: 20px; font-weight: 700; margin-bottom: 15px; }
+        .slots-container { display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px; }
+        .player-slot { display: flex; flex-direction: column; items: center; gap: 8px; width: 48%; }
+        .slot-label { font-size: 13px; font-weight: 600; color: #94a3b8; text-align: center; }
+        .char-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; width: 100%; }
+        
+        .char-option {
+            padding: 8px 4px;
+            background-color: #111827;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #f8fafc;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.1s ease;
+        }
+        .p1-selected { border-color: #3b82f6 !important; background-color: rgba(59, 130, 246, 0.2); }
+        .p2-selected { border-color: #ec4899 !important; background-color: rgba(236, 72, 153, 0.2); }
+
+        .skill-desc-panel {
+            width: 100%;
+            background: #111827;
+            border-radius: 8px;
+            padding: 10px;
+            box-sizing: border-box;
+            font-size: 11px;
+            margin-bottom: 15px;
+            border: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            min-height: 85px;
+        }
+        .skill-desc-box { width: 48%; display: flex; flex-direction: column; gap: 2px; }
+        .skill-name-tag { font-weight: bold; color: #f59e0b; }
+
+        .select-actions { display: flex; gap: 15px; width: 100%; justify-content: center; }
+
+        #status-board {
+            margin-top: 20px;
+            display: none;
+            justify-content: space-between;
+            width: 500px;
+            gap: 30px;
+        }
+        .hp-container { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .hp-name { font-size: 14px; font-weight: 700; }
+        .bar-bg { width: 100%; background-color: #1e293b; border-radius: 4px; overflow: hidden; }
+        .hp-bar-bg { height: 12px; }
+        .mp-bar-bg { height: 5px; background-color: #0f172a; }
+        .bar-fill { height: 100%; width: 100%; border-radius: 4px; transition: width 0.05s linear; }
+        
+        @keyframes minjun-glow-1 { 0%, 100% { filter: drop-shadow(0 0 2px #3b82f6); opacity: 0.8; } 50% { filter: drop-shadow(0 0 8px #3b82f6); opacity: 1; } }
+        @keyframes minjun-glow-2 { 0%, 100% { filter: drop-shadow(0 0 2px #f59e0b); opacity: 0.7; } 50% { filter: drop-shadow(0 0 12px #f59e0b); opacity: 1; } }
+        @keyframes minjun-glow-3 { 0%, 100% { filter: drop-shadow(0 0 4px #ef4444); opacity: 0.6; } 50% { filter: drop-shadow(0 0 18px #ef4444); opacity: 1; } }
+        .glow-step1 { animation: minjun-glow-1 0.4s infinite alternate; }
+        .glow-step2 { animation: minjun-glow-2 0.25s infinite alternate; }
+        .glow-step3 { animation: minjun-glow-3 0.15s infinite alternate; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <button id="ingame-menu-btn" onclick="forceBackToMenu()">MENU</button>
+
+        <div id="main-menu" class="screen-panel">
+            <div class="menu-title">BALL FIGHT SIMULATOR</div>
+            <button class="btn" onclick="playClick(); showCharSelect()">게임 시작</button>
+        </div>
+
+        <div id="char-select-menu" class="screen-panel">
+            <div class="select-title">캐릭터 및 스킬 정보</div>
+            
+            <div class="slots-container">
+                <div class="player-slot">
+                    <div class="slot-label">PLAYER 1 (좌측)</div>
+                    <div class="char-grid" id="p1-grid">
+                        <div class="char-option" onclick="playClick(); selectChar(1, 'glem')">글렘</div>
+                        <div class="char-option" onclick="playClick(); selectChar(1, 'lican')">리캔</div>
+                        <div class="char-option" onclick="playClick(); selectChar(1, 'rett')">레트</div>
+                        <div class="char-option" onclick="playClick(); selectChar(1, 'dubu')">두부</div>
+                        <div class="char-option" onclick="playClick(); selectChar(1, 'cason')">캐슨</div>
+                        <div class="char-option" onclick="playClick(); selectChar(1, 'biseob')">비섭</div>
+                        <div class="char-option" onclick="playClick(); selectChar(1, 'chobung')">초붕</div>
+                        <div class="char-option" onclick="playClick(); selectChar(1, 'minjun')">민준</div>
+                    </div>
+                </div>
+                <div class="player-slot">
+                    <div class="slot-label">PLAYER 2 (우측)</div>
+                    <div class="char-grid" id="p2-grid">
+                        <div class="char-option" onclick="playClick(); selectChar(2, 'glem')">글렘</div>
+                        <div class="char-option" onclick="playClick(); selectChar(2, 'lican')">리캔</div>
+                        <div class="char-option" onclick="playClick(); selectChar(2, 'rett')">레트</div>
+                        <div class="char-option" onclick="playClick(); selectChar(2, 'dubu')">두부</div>
+                        <div class="char-option" onclick="playClick(); selectChar(2, 'cason')">캐슨</div>
+                        <div class="char-option" onclick="playClick(); selectChar(2, 'biseob')">비섭</div>
+                        <div class="char-option" onclick="playClick(); selectChar(2, 'chobung')">초붕</div>
+                        <div class="char-option" onclick="playClick(); selectChar(2, 'minjun')">민준</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="skill-desc-panel">
+                <div class="skill-desc-box" id="p1-desc"></div>
+                <div class="skill-desc-box" id="p2-desc"></div>
+            </div>
+
+            <div class="select-actions">
+                <button class="btn btn-secondary" onclick="playClick(); hideCharSelect()">이전으로</button>
+                <button class="btn" onclick="playClick(); startGame()">전투 개시</button>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+    </div>
+
+    <div id="status-board">
+        <div class="hp-container">
+            <div class="hp-name" id="name-p1">Player 1</div>
+            <div class="bar-bg hp-bar-bg" id="hp-box-p1"><div id="bar-p1" class="bar-fill"></div></div>
+            <div class="bar-bg mp-bar-bg"><div id="cooldown-p1" class="bar-fill" style="background-color: #64748b; width: 0%;"></div></div>
+        </div>
+        <div class="hp-container">
+            <div class="hp-name" id="name-p2">Player 2</div>
+            <div class="bar-bg hp-bar-bg" id="hp-box-p2"><div id="bar-p2" class="bar-fill"></div></div>
+            <div class="bar-bg mp-bar-bg"><div id="cooldown-p2" class="bar-fill" style="background-color: #64748b; width: 0%;"></div></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let gameState = 'MENU';
+        let countdownValue = 3;
+        let countdownTimer = null;
+        let animationFrameId = null;
+
+        let shakeIntensity = 0;
+        let koExplosionTriggered = false; 
+        let koExplosionTimer = 0;        
+
+        let projectiles = [];
+        let visualEffects = [];
+        let dubuTrails = [];
+        let stickyBombs = [];    
+        let survivalItems = [];  
+        let licanTraps = [];     
+
+        const BASE_SPEED = 4.5;
+
+        const charData = {
+            glem: { name: '글렘', color: '#a855f7', cooldown: 8000, desc: '[난식 / 8초] 1.5초간 정지하여 관통+탄퍼짐 고속 검기를 연속 발사합니다. (발당 5)' },
+            lican: { name: '리캔', color: '#22c55e', cooldown: 7000, desc: '[포획 저격 / 7초] 덫 설치. 적 구속 시 2초간 쿨타임과 적을 정지시키며 차징 후 저격(25 대미지)' },
+            rett: { name: '레트', color: '#384252', cooldown: 6000, desc: '[움직이는 차징 펀치 / 6초] 이동 가능 상태로 0.5초 차징 후 범위 150에 30 피해. 피격자는 1초간 밀려나며 외벽 충돌 시 +5 피해' },
+            dubu: { name: '두부', color: '#eab308', cooldown: 5000, desc: '[부스트 / 5초] 2초간 속도가 폭증하며, 이 상태에서 적 충돌 시 8의 대미지를 입힙니다.' },
+            cason: { name: '캐슨', color: '#06b6d4', cooldown: 4000, desc: '[부착 폭탄 / 4초] 구체 발사(25 피해). 벽에 붙어 폭발 시 3개의 유도성 파편 탄환 생성(각 10 피해)' },
+            biseob: { name: '비섭', color: '#f97316', cooldown: 9000, desc: '[룰렛 / 9초] 고속 액션(초당 10발 집중 탄퍼짐 난사, 발당 3), 고속 리듬, 생존 무작위 발동.' },
+            chobung: { name: '초붕', color: '#ec4899', cooldown: 6000, desc: '[스나 장인 / 6초] 먼 모서리로 서서히 로프 이동 후 2초 충전, 15의 히트스캔 사격.' },
+            minjun: { name: '민준', color: '#2563eb', cooldown: 7000, desc: '[흑화 / 7초] 3초간 직사각형 연타. HP 75% 사거리 2배(상시유지), 50% 대미지 2배 각성.' }
+        };
+
+        let selectedP1 = 'glem';
+        let selectedP2 = 'lican';
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+
+            const createNode = (fType, freq, gainVal, duration) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = fType;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(gainVal, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + duration);
+                return { osc, gain };
+            };
+
+            if (type === 'countdown') {
+                createNode('sine', 400, 0.06, 0.12);
+            } else if (type === 'start') {
+                createNode('sine', 750, 0.1, 0.25);
+            } else if (type === 'wall') {
+                createNode('triangle', 130, 0.04, 0.08);
+            } else if (type === 'hit') {
+                createNode('sine', 220, 0.08, 0.15);
+            } else if (type === 'click') {
+                createNode('sine', 600, 0.05, 0.04);
+            } else if (type === 'slash_skill') {
+                const s1 = createNode('sawtooth', 700, 0.04, 0.18);
+                s1.osc.frequency.exponentialRampToValueAtTime(1400, now + 0.15);
+            } else if (type === 'gun_skill') {
+                createNode('square', 440, 0.04, 0.06);
+            } else if (type === 'charge_up') {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(600, now + 0.5);
+                gain.gain.setValueAtTime(0.01, now); gain.gain.linearRampToValueAtTime(0.05, now + 0.5);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.5);
+            } else if (type === 'punch_hit') {
+                createNode('triangle', 110, 0.15, 0.2);
+            } else if (type === 'roulette') {
+                createNode('sine', 880, 0.04, 0.05);
+            } else if (type === 'heal') {
+                const osc = createNode('sine', 300, 0.06, 0.2);
+                osc.osc.frequency.linearRampToValueAtTime(600, now + 0.18);
+            } else if (type === 'laser') {
+                const s = createNode('sawtooth', 1200, 0.08, 0.3);
+                s.osc.frequency.linearRampToValueAtTime(200, now + 0.3);
+            }
+        }
+        function playClick() { playSound('click'); }
+
+        class TrailEffect {
+            constructor(x, y, radius, color) {
+                this.x = x; this.y = y; this.radius = radius;
+                this.color = color; this.alpha = 0.4; this.isDead = false;
+            }
+            update() {
+                this.alpha -= 0.05;
+                if (this.alpha <= 0) this.isDead = true;
+            }
+            draw() {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; ctx.fill(); ctx.restore();
+            }
+        }
+
+        class VisualEffect {
+            constructor(x, y, maxRadius, color, lineWidth = 5) {
+                this.x = x; this.y = y; this.radius = 5;
+                this.maxRadius = maxRadius; this.color = color;
+                this.lineWidth = lineWidth; this.alpha = 1.0; this.isDead = false;
+            }
+            update() {
+                this.radius += (this.maxRadius - this.radius) * 0.15;
+                this.alpha = 1 - (this.radius / this.maxRadius);
+                if (this.radius >= this.maxRadius - 1) this.isDead = true;
+            }
+            draw() {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = this.color; ctx.lineWidth = this.lineWidth; ctx.stroke(); ctx.restore();
+            }
+        }
+
+        class LicanTrap {
+            constructor(x, y, owner) {
+                this.x = x; this.y = y; this.width = 24; this.height = 24;
+                this.owner = owner; this.isTriggered = false; this.isDead = false;
+            }
+            update(target) {
+                if (this.isTriggered) return;
+
+                const halfW = this.width / 2; const halfH = this.height / 2;
+                const closestX = Math.max(this.x - halfW, Math.min(target.x, this.x + halfW));
+                const closestY = Math.max(this.y - halfH, Math.min(target.y, this.y + halfH));
+                const dx = target.x - closestX; const dy = target.y - closestY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < target.radius) {
+                    this.isTriggered = true;
+                    this.isDead = true; 
+                    
+                    const now = Date.now();
+                    target.licanTrappedEndTime = now + 2000;
+                    target.vx = 0; target.vy = 0;
+                    
+                    this.owner.licanSniperTargetTime = now + 2000;
+                    this.owner.vx = 0; this.owner.vy = 0;
+                    
+                    playSound('click');
+                    shakeIntensity = Math.max(shakeIntensity, 4);
+                    visualEffects.push(new VisualEffect(this.x, this.y, 45, '#22c55e', 4));
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3;
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';
+                ctx.strokeRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                
+                ctx.beginPath();
+                ctx.moveTo(this.x - 6, this.y - 6); ctx.lineTo(this.x + 6, this.y + 6);
+                ctx.moveTo(this.x + 6, this.y - 6); ctx.lineTo(this.x - 6, this.y + 6);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        class StickyBomb {
+            constructor(x, y, vx, vy, owner) {
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+                this.radius = 8; this.owner = owner;
+                this.isAttached = false;
+                this.attachedTo = null; 
+                this.offsetX = 0; this.offsetY = 0; 
+                this.attachTime = 0;
+                this.isDead = false;
+            }
+            update(target) {
+                if (!this.isAttached) {
+                    this.x += this.vx; this.y += this.vy;
+
+                    const dx = target.x - this.x; const dy = target.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < target.radius + this.radius) {
+                        this.isAttached = true; this.attachedTo = target;
+                        this.offsetX = this.x - target.x; this.offsetY = this.y - target.y;
+                        this.attachTime = Date.now(); playSound('wall'); return;
+                    }
+
+                    if (this.x - this.radius <= 0 || this.x + this.radius >= canvas.width || this.y - this.radius <= 0 || this.y + this.radius >= canvas.height) {
+                        this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                        this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                        this.isAttached = true; this.attachedTo = 'WALL';
+                        this.attachTime = Date.now(); playSound('wall');
+                    }
+                } else {
+                    if (this.attachedTo !== 'WALL') {
+                        this.x = this.attachedTo.x + this.offsetX;
+                        this.y = this.attachedTo.y + this.offsetY;
+                    }
+                    if (Date.now() - this.attachTime >= 2000) {
+                        this.explode(target);
+                    }
+                }
+            }
+            explode(target) {
+                this.isDead = true;
+                playSound('punch_hit'); shakeIntensity = 6;
+                visualEffects.push(new VisualEffect(this.x, this.y, 85, '#06b6d4', 5));
+                
+                const edx = target.x - this.x; const edy = target.y - this.y;
+                const edist = Math.sqrt(edx*edx + edy*edy);
+                if (edist < target.radius + 70) {
+                    target.hp -= 25; 
+                }
+
+                if (this.attachedTo === 'WALL') {
+                    const baseAng = Math.atan2(target.y - this.y, target.x - this.x);
+                    const spreadAngles = [baseAng - 0.4, baseAng, baseAng + 0.4];
+                    spreadAngles.forEach(ang => {
+                        const vx = Math.cos(ang) * 6; const vy = Math.sin(ang) * 6;
+                        projectiles.push(new Projectile(this.x, this.y, vx, vy, 4, '#06b6d4', 10, this.owner, 'bullet'));
+                    });
+                }
+            }
+            draw() {
+                ctx.save(); ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                if (this.isAttached) {
+                    const blink = Math.sin(Date.now() * 0.02) > 0;
+                    ctx.fillStyle = blink ? '#f43f5e' : '#06b6d4';
+                } else {
+                    ctx.fillStyle = '#06b6d4';
+                }
+                ctx.fill(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore();
+            }
+        }
+
+        class SurvivalItem {
+            constructor() {
+                this.radius = 10;
+                this.x = this.radius + Math.random() * (canvas.width - this.radius * 2);
+                this.y = this.radius + Math.random() * (canvas.height - this.radius * 2);
+                this.isDead = false;
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(this.x - 8, this.y - 8, 16, 16);
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('+', this.x, this.y); 
+                ctx.restore();
+            }
+        }
+
+        class Projectile {
+            constructor(x, y, vx, vy, radius, color, damage, owner, type = 'bullet') {
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+                this.radius = radius; this.color = color;
+                this.damage = damage; this.owner = owner;
+                this.type = type; this.isDead = false;
+                this.angle = Math.atan2(vy, vx);
+                this.hasHitTarget = false; 
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.type === 'rhythm' && this.y > canvas.height + 20) this.isDead = true;
+                else if (this.x < -100 || this.x > canvas.width + 100 || this.y < -100 || this.y > canvas.height + 100) this.isDead = true;
+            }
+            draw() {
+                ctx.save();
+                if (this.type === 'rhythm') {
+                    ctx.fillStyle = this.color; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
+                    ctx.fillRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+                    ctx.strokeRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+                } else {
+                    ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.beginPath();
+                    if (this.type === 'slash') {
+                        ctx.arc(0, 0, this.radius, -0.4 * Math.PI, 0.4 * Math.PI);
+                        ctx.strokeStyle = this.color; ctx.lineWidth = 4;
+                        ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.stroke();
+                    } else {
+                        ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill();
+                    }
+                    ctx.closePath();
+                }
+                ctx.restore();
+            }
+        }
+
+        class Ball {
+            constructor(x, y, radius, side) {
+                this.startX = x; this.startY = y; this.radius = radius; this.side = side;
+                this.reset();
+            }
+
+            reset() {
+                this.x = this.startX; this.y = this.startY; this.vx = 0; this.vy = 0;
+                this.hp = 100; this.isDead = false;
+                this.charKey = ''; this.color = '#ffffff'; this.name = '';
+                this.lastSkillTime = 0; this.cooldown = 0;
+                
+                this.isCharging = false; this.chargeTargetTime = 0; 
+                this.isRouletteMode = false; this.rouletteEndTime = 0; 
+                this.selectedGameText = ''; this.selectedGameTextEndTime = 0; 
+                this.actionGameEndTime = 0; this.lastShotTime = 0; 
+
+                this.chobungStage = 'NONE'; 
+                this.chobungTargetCorner = null;
+                this.chobungLaserTargetX = 0; this.chobungLaserTargetY = 0;
+
+                this.glemSkillEndTime = 0;
+                this.glemLastShotTime = 0;
+                
+                this.rettStage = 'NONE'; 
+                this.rettChargeEndTime = 0;
+                this.rettKnockbackEndTime = 0; 
+                this.rettKnockbackVx = 0; this.rettKnockbackVy = 0;
+                
+                this.dubuBuffEndTime = 0;
+
+                this.minjunPunchEndTime = 0; this.minjunLastPunchTime = 0;
+
+                this.licanSniperTargetTime = 0; 
+                this.licanTrappedEndTime = 0;   
+                this.hasResetTrapFlag = true; // 구속 만료 감지용 플래그
+            }
+
+            setup(charKey) {
+                this.reset();
+                this.charKey = charKey;
+                this.color = charData[charKey].color;
+                this.name = charData[charKey].name;
+                this.cooldown = charData[charKey].cooldown;
+                this.lastSkillTime = Date.now() + (Math.random() * 1200); 
+            }
+
+            launch() {
+                const angle = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(angle) * BASE_SPEED; this.vy = Math.sin(angle) * BASE_SPEED;
+            }
+
+            normalizeSpeed() {
+                if (Date.now() < this.rettKnockbackEndTime) return;
+
+                const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (currentSpeed === 0) return;
+                
+                let speed = BASE_SPEED;
+                if (this.charKey === 'dubu' && Date.now() < this.dubuBuffEndTime) {
+                    speed = BASE_SPEED * 4; 
+                }
+                this.vx = (this.vx / currentSpeed) * speed; this.vy = (this.vy / currentSpeed) * speed;
+            }
+
+            getMinjunBuffs() {
+                let buffs = { damageMultiplier: 1, rangeMultiplier: 1, noCooldown: false, step: 0 };
+                if (this.charKey !== 'minjun') return buffs;
+                
+                if (this.hp <= 75) { buffs.rangeMultiplier = 2; buffs.step = 1; }
+                if (this.hp <= 50) { buffs.damageMultiplier = 2; buffs.step = 2; }
+                if (this.hp <= 25) { buffs.noCooldown = true; buffs.step = 3; }
+                return buffs;
+            }
+
+            useSkill(target) {
+                if (gameState !== 'PLAYING' || this.isDead) return;
+                const now = Date.now();
+                
+                if (now < this.licanTrappedEndTime || now < this.rettKnockbackEndTime) return;
+
+                const buffs = this.getMinjunBuffs();
+                if (!buffs.noCooldown) {
+                    if (now - this.lastSkillTime < this.cooldown) return;
+                } else {
+                    if (now < this.minjunPunchEndTime) return;
+                }
+
+                if (this.glemSkillEndTime > now || this.rettStage !== 'NONE' || this.licanSniperTargetTime > now) return;
+
+                if (this.charKey === 'glem') {
+                    this.glemSkillEndTime = now + 1500; 
+                    this.glemLastShotTime = 0;
+                    this.vx = 0; this.vy = 0;
+                    this.lastSkillTime = now;
+
+                } else if (this.charKey === 'lican') {
+                    licanTraps.push(new LicanTrap(this.x, this.y, this));
+                    this.lastSkillTime = now;
+
+                } else if (this.charKey === 'rett') {
+                    this.rettStage = 'CHARGING';
+                    this.rettChargeEndTime = now + 500;
+                    playSound('charge_up');
+                    this.lastSkillTime = now;
+
+                } else if (this.charKey === 'dubu') {
+                    this.dubuBuffEndTime = now + 2000;
+                    this.launch(); 
+                    this.normalizeSpeed();
+                    playSound('slash_skill');
+                    this.lastSkillTime = now;
+
+                } else if (this.charKey === 'cason') {
+                    playSound('gun_skill');
+                    const dx = target.x - this.x; const dy = target.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const vx = (dx / dist) * 8; const vy = (dy / dist) * 8;
+                    stickyBombs.push(new StickyBomb(this.x, this.y, vx, vy, this));
+                    this.lastSkillTime = now;
+
+                } else if (this.charKey === 'biseob') {
+                    this.isRouletteMode = true; this.rouletteEndTime = now + 1000; 
+                    this.lastSkillTime = now;
+
+                } else if (this.charKey === 'chobung') {
+                    const corners = [
+                        {x: 30, y: 30},
+                        {x: canvas.width - 30, y: 30},
+                        {x: 30, y: canvas.height - 30},
+                        {x: canvas.width - 30, y: canvas.height - 30}
+                    ];
+                    let maxDist = -1; let bestCorner = corners[0];
+                    corners.forEach(c => {
+                        const d = Math.sqrt((c.x - target.x)**2 + (c.y - target.y)**2);
+                        if (d > maxDist) { maxDist = d; bestCorner = c; }
+                    });
+                    
+                    this.chobungTargetCorner = bestCorner;
+                    this.chobungStage = 'GRAPPLING';
+                    this.vx = 0; this.vy = 0;
+                    playSound('click');
+                    this.lastSkillTime = now;
+
+                } else if (this.charKey === 'minjun') {
+                    this.minjunPunchEndTime = now + 3000;
+                    this.minjunLastPunchTime = 0;
+                    this.lastSkillTime = now;
+                }
+            }
+
+            executeChobungSniper(target) {
+                this.chobungStage = 'NONE';
+                playSound('laser');
+                shakeIntensity = 10;
+
+                this.chobungLaserTargetX = target.x;
+                this.chobungLaserTargetY = target.y;
+                visualEffects.push({
+                    type: 'laser_beam',
+                    sx: this.x, sy: this.y, tx: target.x, ty: target.y,
+                    alpha: 1.0,
+                    update: function() { this.alpha -= 0.08; if(this.alpha<=0) this.isDead = true; },
+                    draw: function() {
+                        ctx.save(); ctx.globalAlpha = this.alpha;
+                        ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 5;
+                        ctx.shadowBlur = 15; ctx.shadowColor = '#f43f5e';
+                        ctx.beginPath(); ctx.moveTo(this.sx, this.sy); ctx.lineTo(this.tx, this.ty); ctx.stroke();
+                        ctx.restore();
+                    },
+                    isDead: false
+                });
+                visualEffects.push(new VisualEffect(target.x, target.y, 60, '#ec4899', 6));
+
+                target.hp -= 15; 
+                this.launch();
+            }
+
+            executeLicanSniper(target) {
+                this.licanSniperTargetTime = 0;
+                playSound('laser');
+                shakeIntensity = 8;
+                
+                visualEffects.push({
+                    type: 'laser_beam',
+                    sx: this.x, sy: this.y, tx: target.x, ty: target.y,
+                    alpha: 1.0,
+                    update: function() { this.alpha -= 0.1; if(this.alpha<=0) this.isDead = true; },
+                    draw: function() {
+                        ctx.save(); ctx.globalAlpha = this.alpha;
+                        ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 4;
+                        ctx.beginPath(); ctx.moveTo(this.sx, this.sy); ctx.lineTo(this.tx, this.ty); ctx.stroke();
+                        ctx.restore();
+                    },
+                    isDead: false
+                });
+                visualEffects.push(new VisualEffect(target.x, target.y, 50, '#22c55e', 4));
+                
+                target.hp -= 25; 
+                this.launch();
+            }
+
+            executeRettPunch(target) {
+                this.rettStage = 'NONE';
+                playSound('punch_hit');
+                shakeIntensity = 12;
+
+                const RETT_RANGE = 150;
+                visualEffects.push(new VisualEffect(this.x, this.y, RETT_RANGE, '#475569', 5));
+
+                const dx = target.x - this.x; const dy = target.y - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist <= RETT_RANGE + target.radius) {
+                    target.hp -= 30; 
+
+                    const knockAngle = Math.atan2(dy, dx);
+                    const knockSpeed = 16.0; 
+                    target.rettKnockbackEndTime = Date.now() + 1000;
+                    target.rettKnockbackVx = Math.cos(knockAngle) * knockSpeed;
+                    target.rettKnockbackVy = Math.sin(knockAngle) * knockSpeed;
+                    target.vx = target.rettKnockbackVx;
+                    target.vy = target.rettKnockbackVy;
+                    
+                    visualEffects.push(new VisualEffect(target.x, target.y, 45, '#ef4444', 4));
+                }
+            }
+
+            selectRouletteResult(target) {
+                this.isRouletteMode = false;
+                const games = ['ACTION', 'SURVIVAL', 'RHYTHM'];
+                const picked = games[Math.floor(Math.random() * games.length)];
+                const now = Date.now();
+                this.selectedGameTextEndTime = now + 1500;
+
+                if (picked === 'ACTION') {
+                    this.selectedGameText = '💥 액션 게임 선택! 💥';
+                    this.actionGameEndTime = now + 3000; this.lastShotTime = 0;
+                    this.vx = 0; this.vy = 0; 
+                } else if (picked === 'SURVIVAL') {
+                    this.selectedGameText = '🍏 생존 게임 선택! 🍏';
+                    for(let i=0; i<3; i++) survivalItems.push(new SurvivalItem());
+                    playSound('heal');
+                } else if (picked === 'RHYTHM') {
+                    this.selectedGameText = '🎵 리듬 게임 선택! 🎵';
+                    let totalNotes = 16;
+                    let interval = setInterval(() => {
+                        if (gameState !== 'PLAYING') { clearInterval(interval); return; }
+                        const rx = Math.random() * canvas.width;
+                        projectiles.push(new Projectile(rx, -10, 0, 8, 10, '#ec4899', 10, this, 'rhythm'));
+                        totalNotes--;
+                        if(totalNotes <= 0) clearInterval(interval);
+                    }, 220);
+                }
+            }
+
+            draw() {
+                if (this.isDead) return;
+
+                if (this.charKey === 'minjun') {
+                    const buffs = this.getMinjunBuffs();
+                    if (buffs.noCooldown) {
+                        ctx.save(); ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)'; ctx.lineWidth = 4;
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 12 + Math.sin(Date.now()*0.02)*4, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+                    } else if (buffs.step === 2) { 
+                        ctx.save(); ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; ctx.lineWidth = 3;
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 6 + Math.sin(Date.now()*0.02)*3, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+                    } else if (buffs.step === 1) { 
+                        ctx.save(); ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)'; ctx.lineWidth = 3;
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 8 + Math.sin(Date.now()*0.02)*3, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+                    }
+                }
+
+                if (this.chobungStage === 'GRAPPLING' && this.chobungTargetCorner) {
+                    ctx.save(); ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 4]); ctx.beginPath();
+                    ctx.moveTo(this.x, this.y); ctx.lineTo(this.chobungTargetCorner.x, this.chobungTargetCorner.y);
+                    ctx.stroke(); ctx.restore();
+                }
+
+                ctx.save();
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                
+                const now = Date.now();
+                if (this.glemSkillEndTime > now || this.chobungStage === 'CHARGING' || this.rettStage === 'CHARGING' || this.licanSniperTargetTime > now) {
+                    const flash = Math.sin(Date.now() * 0.05) > 0;
+                    ctx.fillStyle = flash ? '#ef4444' : this.color;
+                } else if (now < this.licanTrappedEndTime) {
+                    ctx.fillStyle = '#64748b'; 
+                } else {
+                    ctx.fillStyle = this.color;
+                }
+                ctx.fill(); ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 4; ctx.stroke(); ctx.closePath();
+
+                ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(this.name, this.x, this.y);
+                ctx.restore();
+
+                if (this.chobungStage === 'CHARGING' || this.licanSniperTargetTime > now || this.rettStage === 'CHARGING') {
+                    ctx.save(); ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.beginPath();
+                    let timeLeft = 0;
+                    if (this.chobungStage === 'CHARGING') timeLeft = this.chargeTargetTime - now;
+                    else if (this.licanSniperTargetTime > now) timeLeft = this.licanSniperTargetTime - now;
+                    else if (this.rettStage === 'CHARGING') timeLeft = this.rettChargeEndTime - now;
+                    ctx.arc(this.x, this.y, this.radius + (Math.max(0, timeLeft) * 0.03), 0, Math.PI*2);
+                    ctx.stroke(); ctx.restore();
+                }
+
+                if (this.isRouletteMode) {
+                    ctx.save(); ctx.fillStyle = '#f97316'; ctx.font = 'bold 13px sans-serif';
+                    const roulettePool = ['액션 게임', '생존 게임', '리듬 게임'];
+                    const randomText = roulettePool[Math.floor(Date.now() / 60) % roulettePool.length];
+                    ctx.fillText(randomText, this.x, this.y - 40); ctx.restore();
+                }
+
+                if (Date.now() < this.selectedGameTextEndTime) {
+                    ctx.save(); ctx.fillStyle = '#fecdd3'; ctx.font = 'bold 13px sans-serif';
+                    ctx.shadowBlur = 6; ctx.shadowColor = '#f43f5e';
+                    ctx.fillText(this.selectedGameText, this.x, this.y - 42); ctx.restore();
+                }
+            }
+
+            update(target) {
+                if (this.isDead) return;
+
+                const now = Date.now();
+                if (gameState === 'COUNTDOWN') {
+                    this.lastSkillTime = now;
+                    return;
+                }
+
+                // 덫 구속 상태 핸들링
+                if (now < this.licanTrappedEndTime) {
+                    this.vx = 0; this.vy = 0;
+                    this.hasResetTrapFlag = false; // 구속 중임을 표시
+                    return; 
+                } else {
+                    // ★ 버그 수정 핵심: 구속시간(2초)이 딱 끝나는 프레임에 스스로 기동하도록 속도 복구
+                    if (!this.hasResetTrapFlag) {
+                        this.launch(); 
+                        this.hasResetTrapFlag = true; 
+                    }
+                }
+
+                if (this.licanSniperTargetTime > now) {
+                    this.vx = 0; this.vy = 0;
+                    return;
+                } else if (this.licanSniperTargetTime > 0 && now >= this.licanSniperTargetTime) {
+                    this.executeLicanSniper(target);
+                }
+
+                if (this.isRouletteMode) {
+                    if (now % 3 === 0) playSound('roulette');
+                    if (now >= this.rouletteEndTime) this.selectRouletteResult(target);
+                    return;
+                }
+
+                if (now < this.actionGameEndTime) {
+                    this.vx = 0; this.vy = 0; 
+                    if (now - this.lastShotTime >= 100) { 
+                        playSound('gun_skill'); shakeIntensity = 6;
+                        const dx = target.x - this.x; const dy = target.y - this.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        
+                        const baseAngle = Math.atan2(dy, dx);
+                        const spreadAngle = baseAngle + (Math.random() - 0.5) * 0.18;
+                        
+                        const vx = Math.cos(spreadAngle) * 22; const vy = Math.sin(spreadAngle) * 22;
+                        projectiles.push(new Projectile(this.x, this.y, vx, vy, 4, '#ef4444', 3, this, 'bullet'));
+                        this.lastShotTime = now;
+                    }
+                    return; 
+                } else if (this.actionGameEndTime > 0) {
+                    this.actionGameEndTime = 0;
+                    this.launch();
+                }
+
+                if (now < this.glemSkillEndTime) {
+                    this.vx = 0; this.vy = 0;
+                    if (now - this.glemLastShotTime >= 150) { 
+                        this.glemLastShotTime = now;
+                        playSound('slash_skill');
+                        
+                        const dx = target.x - this.x; const dy = target.y - this.y;
+                        const baseAngle = Math.atan2(dy, dx);
+                        const spreadAngle = baseAngle + (Math.random() - 0.5) * 0.5;
+                        
+                        const speed = 10.5;
+                        const vx = Math.cos(spreadAngle) * speed;
+                        const vy = Math.sin(spreadAngle) * speed;
+                        
+                        projectiles.push(new Projectile(this.x, this.y, vx, vy, 40, this.color, 5, this, 'slash'));
+                    }
+                    return;
+                } else if (this.glemSkillEndTime > 0) {
+                    this.glemSkillEndTime = 0;
+                    this.launch();
+                }
+
+                if (this.rettStage === 'CHARGING') {
+                    if (now >= this.rettChargeEndTime) {
+                        this.executeRettPunch(target);
+                    }
+                }
+
+                if (this.chobungStage === 'GRAPPLING') {
+                    const dest = this.chobungTargetCorner;
+                    const cdx = dest.x - this.x; const cdy = dest.y - this.y;
+                    const cdist = Math.sqrt(cdx*cdx + cdy*cdy);
+
+                    if (cdist > 4) {
+                        this.x += (cdx / cdist) * 8; this.y += (cdy / cdist) * 8;
+                    } else {
+                        this.x = dest.x; this.y = dest.y;
+                        this.chobungStage = 'CHARGING';
+                        this.chargeTargetTime = now + 2000;
+                        playSound('charge_up');
+                    }
+                    return;
+                }
+
+                if (this.chobungStage === 'CHARGING') {
+                    if (now >= this.chargeTargetTime) this.executeChobungSniper(target);
+                    return;
+                }
+
+                if (now < this.minjunPunchEndTime) {
+                    if (now - this.minjunLastPunchTime >= 150) { 
+                        this.minjunLastPunchTime = now;
+                        playSound('gun_skill');
+
+                        const buffs = this.getMinjunBuffs();
+                        const baseRange = 50 * buffs.rangeMultiplier; 
+                        const baseDamage = 3 * buffs.damageMultiplier; 
+
+                        const dx = target.x - this.x; const dy = target.y - this.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        
+                        visualEffects.push({
+                            type: 'minjun_rect_punch', x: this.x, y: this.y, ang: Math.atan2(dy, dx),
+                            range: baseRange, color: buffs.noCooldown ? '#ef4444' : '#60a5fa', alpha: 1.0,
+                            update: function() { this.alpha -= 0.15; if(this.alpha<=0) this.isDead = true; },
+                            draw: function() {
+                                ctx.save(); ctx.globalAlpha = this.alpha; ctx.translate(this.x, this.y); ctx.rotate(this.ang);
+                                ctx.fillStyle = this.color; ctx.fillRect(0, -15, this.range, 30); ctx.restore();
+                            },
+                            isDead: false
+                        });
+
+                        if (dist < this.radius + target.radius + baseRange) {
+                            target.hp -= baseDamage; playSound('hit'); 
+                            shakeIntensity = Math.max(shakeIntensity, 3); 
+                        }
+                    }
+                }
+
+                if (now < this.rettKnockbackEndTime) {
+                    this.x += this.rettKnockbackVx;
+                    this.y += this.rettKnockbackVy;
+                } else {
+                    this.x += this.vx; this.y += this.vy;
+                }
+
+                if (this.charKey === 'dubu' && now < this.dubuBuffEndTime && gameState === 'PLAYING') {
+                    dubuTrails.push(new TrailEffect(this.x, this.y, this.radius, this.color));
+                }
+
+                let hitWall = false;
+                if (this.x - this.radius < 0) { 
+                    this.x = this.radius; this.vx *= -1; this.rettKnockbackVx *= -1; hitWall = true; 
+                } else if (this.x + this.radius > canvas.width) { 
+                    this.x = canvas.width - this.radius; this.vx *= -1; this.rettKnockbackVx *= -1; hitWall = true; 
+                }
+                if (this.y - this.radius < 0) { 
+                    this.y = this.radius; this.vy *= -1; this.rettKnockbackVy *= -1; hitWall = true; 
+                } else if (this.y + this.radius > canvas.height) { 
+                    this.y = canvas.height - this.radius; this.vy *= -1; this.rettKnockbackVy *= -1; hitWall = true; 
+                }
+
+                if (hitWall) { 
+                    this.normalizeSpeed(); 
+                    playSound('wall'); 
+                    if (now < this.rettKnockbackEndTime) {
+                        this.hp -= 5;
+                        shakeIntensity = Math.max(shakeIntensity, 5);
+                        visualEffects.push(new VisualEffect(this.x, this.y, 35, '#ef4444', 3));
+                    }
+                }
+
+                this.useSkill(target);
+            }
+        }
+
+        const ball1 = new Ball(150, 250, 26, 1);
+        const ball2 = new Ball(350, 250, 26, 2);
+
+        function showCharSelect() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('char-select-menu').style.display = 'flex';
+            selectChar(1, selectedP1); selectChar(2, selectedP2);
+        }
+        function hideCharSelect() {
+            document.getElementById('char-select-menu').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'flex';
+        }
+
+        function selectChar(player, charKey) {
+            if (player === 1) {
+                selectedP1 = charKey; updateSelectionUI(1, charKey);
+                document.getElementById('p1-desc').innerHTML = `<span class="skill-name-tag">${charData[charKey].name}</span> ${charData[charKey].desc}`;
+            } else {
+                selectedP2 = charKey; updateSelectionUI(2, charKey);
+                document.getElementById('p2-desc').innerHTML = `<span class="skill-name-tag">${charData[charKey].name}</span> ${charData[charKey].desc}`;
+            }
+        }
+
+        function updateSelectionUI(player, charKey) {
+            const gridId = player === 1 ? 'p1-grid' : 'p2-grid';
+            const className = player === 1 ? 'p1-selected' : 'p2-selected';
+            const options = document.getElementById(gridId).children;
+            const keys = ['glem', 'lican', 'rett', 'dubu', 'cason', 'biseob', 'chobung', 'minjun'];
+            for (let i = 0; i < options.length; i++) options[i].classList.remove(className);
+            options[keys.indexOf(charKey)].classList.add(className);
+        }
+
+        function startGame() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            projectiles = []; visualEffects = []; dubuTrails = []; stickyBombs = []; survivalItems = []; licanTraps = [];
+            shakeIntensity = 0; koExplosionTriggered = false; koExplosionTimer = 0;
+            ball1.setup(selectedP1); ball2.setup(selectedP2);
+
+            document.getElementById('char-select-menu').style.display = 'none';
+            document.getElementById('gameCanvas').style.display = 'block';
+            document.getElementById('status-board').style.display = 'flex';
+            document.getElementById('ingame-menu-btn').style.display = 'block';
+
+            document.getElementById('name-p1').innerText = ball1.name;
+            document.getElementById('bar-p1').style.backgroundColor = ball1.color;
+            document.getElementById('name-p2').innerText = ball2.name;
+            document.getElementById('bar-p2').style.backgroundColor = ball2.color;
+
+            document.getElementById('hp-box-p1').className = "bar-bg hp-bar-bg";
+            document.getElementById('hp-box-p2').className = "bar-bg hp-bar-bg";
+
+            gameState = 'COUNTDOWN'; countdownValue = 3;
+            playSound('countdown');
+
+            countdownTimer = setInterval(() => {
+                countdownValue--;
+                if (countdownValue > 0) playSound('countdown');
+                else if (countdownValue === 0) {
+                    clearInterval(countdownTimer); playSound('start');
+                    gameState = 'PLAYING'; 
+                    ball1.launch(); ball2.launch();
+                }
+            }, 1000);
+            animate();
+        }
+
+        function checkCollisions() {
+            if (gameState !== 'PLAYING') return;
+
+            const dx = ball2.x - ball1.x; const dy = ball2.y - ball1.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < ball1.radius + ball2.radius) {
+                playSound('hit');
+                
+                let causedDamage = false;
+                if (ball1.charKey === 'dubu' && Date.now() < ball1.dubuBuffEndTime) { ball2.hp -= 8; causedDamage = true; } 
+                if (ball2.charKey === 'dubu' && Date.now() < ball2.dubuBuffEndTime) { ball1.hp -= 8; causedDamage = true; }
+
+                if (causedDamage) {
+                    shakeIntensity = Math.max(shakeIntensity, 4);
+                }
+
+                const overlap = (ball1.radius + ball2.radius) - distance;
+                const nx = dx / distance; const ny = dy / distance;
+                ball1.x -= nx * overlap / 2; ball1.y -= ny * overlap / 2;
+                ball2.x += nx * overlap / 2; ball2.y += ny * overlap / 2;
+
+                const kx = ball1.vx - ball2.vx; const ky = ball1.vy - ball2.vy;
+                const p = 2 * (nx * kx + ny * ky) / 2;
+                ball1.vx -= p * nx; ball1.vy -= p * ny;
+                ball2.vx += p * nx; ball2.vy += p * ny;
+
+                ball1.normalizeSpeed(); ball2.normalizeSpeed();
+            }
+
+            projectiles.forEach(proj => {
+                if (proj.isDead) return;
+                const target = proj.owner === ball1 ? ball2 : ball1;
+                const pdx = target.x - proj.x; const pdy = target.y - proj.y;
+                const pDist = Math.sqrt(pdx*pdx + pdy*pdy);
+
+                if (pDist < target.radius + proj.radius) {
+                    if (proj.type === 'slash' && proj.hasHitTarget) return;
+
+                    target.hp -= proj.damage; 
+                    proj.hasHitTarget = true; 
+
+                    if (proj.type !== 'slash') { proj.isDead = true; }
+                    playSound('hit');
+                    
+                    if (proj.type === 'rhythm') {
+                        visualEffects.push(new VisualEffect(proj.x, proj.y, 40, '#ec4899'));
+                    } else {
+                        shakeIntensity = Math.max(shakeIntensity, 3);
+                    }
+                }
+            });
+            projectiles = projectiles.filter(p => !p.isDead);
+
+            stickyBombs.forEach(bomb => {
+                const target = bomb.owner === ball1 ? ball2 : ball1;
+                bomb.update(target);
+            });
+            stickyBombs = stickyBombs.filter(b => !b.isDead);
+
+            licanTraps.forEach(trap => {
+                const target = trap.owner === ball1 ? ball2 : ball1;
+                trap.update(target);
+            });
+            licanTraps = licanTraps.filter(t => !t.isDead);
+
+            survivalItems.forEach(item => {
+                if (item.isDead) return;
+                [ball1, ball2].forEach(player => {
+                    const idx = player.x - item.x; const idy = player.y - item.y;
+                    const idist = Math.sqrt(idx*idx + idy*idy);
+                    if (idist < player.radius + item.radius) {
+                        player.hp = Math.min(100, player.hp + 10);
+                        item.isDead = true; playSound('heal');
+                        visualEffects.push(new VisualEffect(item.x, item.y, 35, '#22c55e'));
+                    }
+                });
+            });
+            survivalItems = survivalItems.filter(i => !i.isDead);
+
+            if (ball1.hp <= 0) { ball1.hp = 0; ball1.isDead = true; }
+            if (ball2.hp <= 0) { ball2.hp = 0; ball2.isDead = true; }
+        }
+
+        function updateBars() {
+            document.getElementById('bar-p1').style.width = `${Math.max(0, ball1.hp)}%`;
+            document.getElementById('bar-p2').style.width = `${Math.max(0, ball2.hp)}%`;
+
+            [ball1, ball2].forEach((player, index) => {
+                const num = index + 1;
+                const hpBox = document.getElementById(`hp-box-p${num}`);
+                if (player.charKey === 'minjun') {
+                    const buffs = player.getMinjunBuffs();
+                    if (buffs.step === 3) hpBox.className = "bar-bg hp-bar-bg glow-step3";
+                    else if (buffs.step === 2) hpBox.className = "bar-bg hp-bar-bg glow-step2";
+                    else if (buffs.step === 1) hpBox.className = "bar-bg hp-bar-bg glow-step1";
+                    else hpBox.className = "bar-bg hp-bar-bg";
+                }
+            });
+
+            const now = Date.now();
+            if (gameState === 'COUNTDOWN') {
+                document.getElementById('cooldown-p1').style.width = '0%';
+                document.getElementById('cooldown-p2').style.width = '0%';
+                return;
+            }
+
+            if (ball1.cooldown > 0 && now >= ball1.licanTrappedEndTime) {
+                const p1Progress = Math.min(100, ((now - ball1.lastSkillTime) / ball1.cooldown) * 100);
+                document.getElementById('cooldown-p1').style.width = `${p1Progress}%`;
+            }
+            if (ball2.cooldown > 0 && now >= ball2.licanTrappedEndTime) {
+                const p2Progress = Math.min(100, ((now - ball2.lastSkillTime) / ball2.cooldown) * 100);
+                document.getElementById('cooldown-p2').style.width = `${p2Progress}%`;
+            }
+        }
+
+        function forceBackToMenu() {
+            playClick(); clearInterval(countdownTimer);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            gameState = 'MENU';
+            document.getElementById('main-menu').style.display = 'flex';
+            document.getElementById('char-select-menu').style.display = 'none';
+            document.getElementById('gameCanvas').style.display = 'none';
+            document.getElementById('status-board').style.display = 'none';
+            document.getElementById('ingame-menu-btn').style.display = 'none';
+        }
+
+        function backToMenuOnEnded() {
+            if (gameState !== 'ENDED') return;
+            forceBackToMenu();
+        }
+        window.addEventListener('click', backToMenuOnEnded);
+        window.addEventListener('keydown', backToMenuOnEnded);
+
+        function animate() {
+            ctx.save();
+            
+            if (shakeIntensity > 0) {
+                const dx = (Math.random() - 0.5) * shakeIntensity;
+                const dy = (Math.random() - 0.5) * shakeIntensity;
+                ctx.translate(dx, dy);
+                shakeIntensity *= 0.85;
+                if (shakeIntensity < 0.2) shakeIntensity = 0;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!koExplosionTriggered) {
+                ball1.update(ball2); ball2.update(ball1);
+                projectiles.forEach(p => p.update());
+                checkCollisions();
+            }
+            
+            visualEffects.forEach(e => e.update());
+            if (!koExplosionTriggered) {
+                dubuTrails.forEach(t => t.update());
+            }
+
+            updateBars();
+
+            licanTraps.forEach(t => t.draw());
+            survivalItems.forEach(i => i.draw());
+            stickyBombs.forEach(b => b.draw()); 
+            dubuTrails.forEach(t => t.draw());
+            projectiles.forEach(p => p.draw());
+            visualEffects.forEach(e => e.draw());
+            
+            ball1.draw(); ball2.draw();
+
+            dubuTrails = dubuTrails.filter(t => !t.isDead);
+            visualEffects = visualEffects.filter(e => !e.isDead);
+
+            if (gameState === 'COUNTDOWN') {
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.6)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#f8fafc'; ctx.font = '800 70px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(countdownValue === 0 ? "START!" : countdownValue, canvas.width / 2, canvas.height / 2);
+            }
+
+            if (gameState === 'PLAYING') {
+                if (ball1.isDead || ball2.isDead) {
+                    koExplosionTriggered = true;
+                    koExplosionTimer = Date.now();
+                    playSound('punch_hit');
+                    shakeIntensity = 15;
+
+                    if (ball1.isDead) {
+                        for(let i=0; i<5; i++) {
+                            visualEffects.push(new VisualEffect(ball1.x + (Math.random()-0.5)*30, ball1.y + (Math.random()-0.5)*30, 60 + i*20, '#ef4444', 4));
+                        }
+                    }
+                    if (ball2.isDead) {
+                        for(let i=0; i<5; i++) {
+                            visualEffects.push(new VisualEffect(ball2.x + (Math.random()-0.5)*30, ball2.y + (Math.random()-0.5)*30, 60 + i*20, '#ef4444', 4));
+                        }
+                    }
+                    gameState = 'FREEZE_EXPLOSION';
+                }
+            }
+
+            if (gameState === 'FREEZE_EXPLOSION') {
+                if (Date.now() - koExplosionTimer > 1200) {
+                    gameState = 'ENDED';
+                }
+            }
+
+            if (gameState === 'ENDED') {
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center';
+                let msg = "무승부 (DRAW)";
+                if (ball1.isDead && !ball2.isDead) msg = `${ball2.name} 승리!`;
+                else if (!ball1.isDead && ball2.isDead) msg = `${ball1.name} 승리!`;
+                ctx.fillText(msg, canvas.width / 2, canvas.height / 2 - 20);
+                ctx.fillStyle = '#94a3b8'; ctx.font = 'normal 14px sans-serif';
+                ctx.fillText('화면을 클릭하면 메인 메뉴로 돌아갑니다.', canvas.width / 2, canvas.height / 2 + 35);
+                ctx.restore();
+                return;
+            }
+
+            ctx.restore();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+</html>
